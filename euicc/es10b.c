@@ -88,7 +88,8 @@ int es10b_prepare_download_r(struct euicc_ctx *ctx, char **b64_PrepareDownloadRe
 
     if (euicc_derutil_convert_bin2long(n_ccRequiredFlag.value, n_ccRequiredFlag.length)) {
         if ((!param_user->confirmationCode) || (strlen(param_user->confirmationCode) == 0)) {
-            goto err;
+            fret = ES10B_PREPARE_DOWNLOAD_ERROR_CONFIRMATION_CODE_REQUIRED;
+            goto exit;
         }
 
         memset(&sha256ctx, 0, sizeof(sha256ctx));

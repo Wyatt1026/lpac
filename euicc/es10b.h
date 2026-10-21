@@ -57,6 +57,12 @@ enum es10b_cancel_session_reason {
     ES10B_CANCEL_SESSION_REASON_UNDEFINED = 127
 };
 
+enum es10b_prepare_download_error {
+    // smdpSigned2 sets the Confirmation Code Required Flag and no confirmation code was given. Nothing was sent to the
+    // eUICC, and the RSP session is still open.
+    ES10B_PREPARE_DOWNLOAD_ERROR_CONFIRMATION_CODE_REQUIRED = -2,
+};
+
 struct es10b_load_bound_profile_package_result {
     unsigned long seqNumber;
     char *iccid;

@@ -164,6 +164,9 @@ There is no secondary confirmation for deleting a Profile, so please perform it 
 - `-a`: LPA qrcode activation code string, e.g: `LPA:1$<sm-dp+ domain>$<matching id>`, if provided, this option takes precedence over the `-s` and `-m` options, optional.
 - `-p`: Interactive preview mode, optional.
 
+> [!NOTE]
+> A download that does not finish is cancelled on the eUICC and at the SM-DP+. Answering no to the preview, or interrupting lpac, cancels it as the end user's rejection, which ends the order at the SM-DP+. Any other failure cancels it as postponed, which keeps the order open for another try, unless it happens while the eUICC loads the Bound Profile Package. If the SM-DP+ wants a confirmation code and `-c` gave none, the error is `confirmation_code` with `required`, whether or not the activation code said so.
+
 <details>
 
 <summary>Example</summary>

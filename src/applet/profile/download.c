@@ -93,8 +93,13 @@ static cJSON *build_access_rules_json(const struct es8p_metadata_access_rule *ru
 
 static int applet_main(int argc, char **argv) {
     int fret;
+    int ret;
     const char *error_function_name = NULL;
     _cleanup_free_ char *error_detail = NULL;
+    // What a download that fails is cancelled with, unless the user refused it. The SM-DP+ ends the order for good on
+    // every reason but postponed and timeout (SGP.22 v2.2.2 section 3.1.3.1), so a failure keeps the order open for
+    // another try until the eUICC has been handed the Bound Profile Package.
+    enum es10b_cancel_session_reason cancel_reason = ES10B_CANCEL_SESSION_REASON_POSTPONED;
 
     int opt;
 
@@ -288,7 +293,13 @@ static int applet_main(int argc, char **argv) {
 
     CANCELPOINT();
     jprint_progress("es10b_prepare_download", smdp);
-    if (es10b_prepare_download(&euicc_ctx, confirmation_code)) {
+    ret = es10b_prepare_download(&euicc_ctx, confirmation_code);
+    if (ret == ES10B_PREPARE_DOWNLOAD_ERROR_CONFIRMATION_CODE_REQUIRED) {
+        // Asked for in smdpSigned2 rather than in the activation code: the same answer as for the latter.
+        error_function_name = "confirmation_code";
+        error_detail = strdup("required");
+        goto err;
+    } else if (ret) {
         error_function_name = "es10b_prepare_download";
         error_detail = NULL;
         goto err;
@@ -303,6 +314,8 @@ static int applet_main(int argc, char **argv) {
     }
 
     CANCELPOINT();
+    // SGP.22 v2.2.2 section 3.1.3.3: how a failure to load the Bound Profile Package is cancelled.
+    cancel_reason = ES10B_CANCEL_SESSION_REASON_LOADBPPEXECUTIONERROR;
     jprint_progress("es10b_load_bound_profile_package", smdp);
     if (es10b_load_bound_profile_package(&euicc_ctx, &download_result)) {
         jprint_progress_obj("es10b_load_bound_profile_package:result", build_download_result_json(&download_result));
@@ -325,7 +338,8 @@ static int applet_main(int argc, char **argv) {
 err:
     fret = -1;
     jprint_progress("es10b_cancel_session", smdp);
-    es10b_cancel_session(&euicc_ctx, ES10B_CANCEL_SESSION_REASON_ENDUSERREJECTION);
+    // A preview answered no, or an interrupt, is the user turning the profile down.
+    es10b_cancel_session(&euicc_ctx, cancelled ? ES10B_CANCEL_SESSION_REASON_ENDUSERREJECTION : cancel_reason);
     jprint_progress("es9p_cancel_session", smdp);
     es9p_cancel_session(&euicc_ctx);
     if (!cancelled) {

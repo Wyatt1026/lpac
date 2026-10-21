@@ -24,6 +24,12 @@ cmake --build build
 
 To run unit tests, run `test` target.
 
+`tests/profile_download_test.py` runs `profile download` against a fake eUICC and a fake SM-DP+, through the stdio drivers. It needs an installed lpac (see below) and Python 3:
+
+```bash
+LPAC=output/executables/lpac python3 tests/profile_download_test.py
+```
+
 If you want to package lpac in a relocatable directory, please build with `-DSTANDALONE_MODE=ON`,
 and then run command below to install files in directory.
 
